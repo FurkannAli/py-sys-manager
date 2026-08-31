@@ -1,10 +1,10 @@
 from typing import Container
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QMainWindow, QProgressBar
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar
 import psutil
 from sys_main import Ui_MainWindow
 import sys
-from metrics import system_call, running_procs
+from metrics import core_stats, disk_stats, net_stats, running_procs
 import pyqtgraph as pg
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -27,6 +27,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
 
         self.lineEdit_Search.textChanged.connect(self.search_func)
 
+        #individual core progress bar stuff
         self.core_prog_bars = []
         inital_cores = psutil.cpu_percent(interval=None, percpu=True)
         for i, val in enumerate(inital_cores):
@@ -38,7 +39,7 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.gridLayout_Core.addWidget(bar)
             self.core_prog_bars.append(bar)
         
-        stats = system_call()  
+        stats = core_stats()  
         total_ram = format_bytes(stats['ram_total'])
         self.label_mem.setText(f"{self.label_mem.text()} ({total_ram})")
         total_swap = format_bytes(stats["swap_total"])
@@ -68,9 +69,39 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.verticalLayout_ChartThing.addWidget(self.CPUchart)
         self.verticalLayout_ChartThing.addWidget(self.RAMchart)
 
+        #this disk stuff probably doesnt work.. gotta try with other partitions and stuff...
+        #disk stuff
+        self.disk_bars = {}
+        disks = disk_stats() or []
+
+        for disk in disks:
+            mount = disk['mountpoint']
+            label = QLabel(f"Disk {mount}:")
+            bar = QProgressBar()
+            bar.setRange(0, 100)
+            self.verticalLayout_Disks.addWidget(label)
+            self.verticalLayout_Disks.addWidget(bar)
+            self.disk_bars[mount] = bar
+        
+        #net stuff
+        self.max_his = 60
+        self.net_sent_his = [0.0] * self.max_his
+        self.net_recv_his = [0.0] * self.max_his
+
+        self.NetChart = pg.PlotWidget()
+        self.NetChart.setBackground('k')
+        self.NetChart.setTitle("Network I/O whatevertf (KB/s btw)", color="w", size="15pt")
+        self.NetChart.showGrid(x=True, y=True)
+        self.sent_curve = self.NetChart.plot(self.net_sent_his, pen=pg.mkPen(color='g', width=2), name="Up")
+        self.recv_curve = self.NetChart.plot(self.net_recv_his, pen=pg.mkPen(color='c', width=2), name="Down")
+        self.verticalLayout_NetStuff.addWidget(self.NetChart)
+
+
 
     def update_dashboard(self):
-        stats = system_call()
+        stats = core_stats()
+        diskstats = disk_stats() or []
+        netstats = net_stats()
 
         cpu_value = stats['cpu']
         ram_value = stats['ram']
@@ -104,6 +135,25 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 bar = self.core_prog_bars[i]
                 bar.setValue(int(core_val))
                 bar.setFormat(f"Core {i}: {core_val:.1f}%")
+
+        for disk in diskstats:
+            mount = disk['mountpoint']
+            if mount in self.disk_bars:
+                used_fmt = format_bytes(disk['used'])
+                total_fmt = format_bytes(disk['total'])
+                self.disk_bars[mount].setValue(int(disk['percent']))
+                self.disk_bars[mount].setFormat(f"{disk['percent']:.1f}% ({used_fmt} / {total_fmt})")
+        
+        sent_kb = netstats['sent_speed'] / 1024
+        recv_kb = netstats['recv_speed'] / 1024
+
+        self.net_sent_his.pop(0)
+        self.net_sent_his.append(sent_kb)
+        self.sent_curve.setData(self.net_sent_his)
+
+        self.net_recv_his.pop(0)
+        self.net_recv_his.append(recv_kb)
+        self.recv_curve.setData(self.net_recv_his)
 
         print(f"Refreshed stats: {stats}")
 
