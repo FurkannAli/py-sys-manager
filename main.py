@@ -1,9 +1,8 @@
 from typing import Container
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar
-import psutil
 from sys_main import Ui_MainWindow
-import sys
+import sys, psutil, time
 from metrics import core_stats, disk_stats, net_stats, running_procs
 import pyqtgraph as pg
 
@@ -45,10 +44,17 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         total_swap = format_bytes(stats["swap_total"])
         self.label_Swap.setText(f"{self.label_Swap.text()} ({total_swap})")
 
+        #a cleaner time and graph thingie
+        self.max_secs = 60.0
+        self.start_time = time.time()
 
-        self.max_his = 60
-        self.cpu_his = [0.0] * self.max_his
-        self.ram_his = [0.0] * self.max_his
+        self.time_his = []
+        self.cpu_his = []
+        self.ram_his = []
+        self.net_sent_his = []
+        self.net_recv_his = []
+
+
 
         self.CPUchart = pg.PlotWidget()
         self.CPUchart.setBackground('k')
@@ -84,14 +90,11 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.disk_bars[mount] = bar
         
         #net stuff
-        self.max_his = 60
-        self.net_sent_his = [0.0] * self.max_his
-        self.net_recv_his = [0.0] * self.max_his
-
         self.NetChart = pg.PlotWidget()
         self.NetChart.setBackground('k')
         self.NetChart.setTitle("Network I/O whatevertf (KB/s btw)", color="w", size="15pt")
         self.NetChart.showGrid(x=True, y=True)
+        self.NetChart.addLegend(offset=(10, 10))
         self.sent_curve = self.NetChart.plot(self.net_sent_his, pen=pg.mkPen(color='g', width=2), name="Up")
         self.recv_curve = self.NetChart.plot(self.net_recv_his, pen=pg.mkPen(color='c', width=2), name="Down")
         self.verticalLayout_NetStuff.addWidget(self.NetChart)
@@ -121,14 +124,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.progressBar_Swap.setFormat(f"{swap_value:.1f}% ({used_swap})")
         self.progressBar_Swap.setValue(swap_value)
 
-        self.cpu_his.pop(0)
-        self.cpu_his.append(stats['cpu'])
-        self.cpu_curve.setData(self.cpu_his)
-
-        self.ram_his.pop(0)
-        self.ram_his.append(stats['ram'])
-        self.ram_curve.setData(self.ram_his)
-
 
         for i, core_val in enumerate(stats['cpu_cores']):
             if i < len(self.core_prog_bars):
@@ -144,16 +139,30 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.disk_bars[mount].setValue(int(disk['percent']))
                 self.disk_bars[mount].setFormat(f"{disk['percent']:.1f}% ({used_fmt} / {total_fmt})")
         
+        #graph things
+        now = time.time() - self.start_time
         sent_kb = netstats['sent_speed'] / 1024
         recv_kb = netstats['recv_speed'] / 1024
 
-        self.net_sent_his.pop(0)
+        self.time_his.append(now)
+        self.cpu_his.append(cpu_value)
+        self.ram_his.append(ram_value)
         self.net_sent_his.append(sent_kb)
-        self.sent_curve.setData(self.net_sent_his)
-
-        self.net_recv_his.pop(0)
         self.net_recv_his.append(recv_kb)
-        self.recv_curve.setData(self.net_recv_his)
+
+        cutoff = now - self.max_secs
+        while self.time_his and self.time_his[0] < cutoff:
+            self.time_his.pop(0)
+            self.cpu_his.pop(0)
+            self.ram_his.pop(0)
+            self.net_sent_his.pop(0)
+            self.net_recv_his.pop(0)
+
+        self.cpu_curve.setData(self.time_his, self.cpu_his)
+        self.ram_curve.setData(self.time_his, self.ram_his)
+        self.sent_curve.setData(self.time_his, self.net_sent_his)
+        self.recv_curve.setData(self.time_his, self.net_recv_his)
+        
 
         print(f"Refreshed stats: {stats}")
 

@@ -28,6 +28,9 @@
         <verstretch>0</verstretch>
        </sizepolicy>
       </property>
+      <property name="tabShape">
+       <enum>QTabWidget::TabShape::Triangular</enum>
+      </property>
       <property name="currentIndex">
        <number>2</number>
       </property>
@@ -184,7 +187,7 @@
           <x>10</x>
           <y>10</y>
           <width>441</width>
-          <height>171</height>
+          <height>241</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_Disks"/>
@@ -193,9 +196,9 @@
         <property name="geometry">
          <rect>
           <x>10</x>
-          <y>190</y>
+          <y>260</y>
           <width>441</width>
-          <height>521</height>
+          <height>451</height>
          </rect>
         </property>
         <layout class="QVBoxLayout" name="verticalLayout_NetStuff"/>
