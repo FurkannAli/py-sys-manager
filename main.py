@@ -1,9 +1,10 @@
+from os import stat
 from typing import Container
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar
 from sys_main import Ui_MainWindow
 import sys, psutil, time
-from metrics import core_stats, disk_stats, net_stats, running_procs
+from metrics import core_stats, disk_stats, net_stats, running_procs, hardware_stats
 import pyqtgraph as pg
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -25,6 +26,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_Kill.clicked.connect(self.kill_proc)
 
         self.lineEdit_Search.textChanged.connect(self.search_func)
+
+        self.sensor_labels = {}
 
         #individual core progress bar stuff
         self.core_prog_bars = []
@@ -99,12 +102,22 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.recv_curve = self.NetChart.plot(self.net_recv_his, pen=pg.mkPen(color='c', width=2), name="Down")
         self.verticalLayout_NetStuff.addWidget(self.NetChart)
 
+        #dicts for dynamic temp ui
+        self.temp_bars = {}
+        self.fan_labels = {}
+        self.battery_bar = None
+        self.battery_label = None
+
+        self.init_hardware_ui()
+
 
 
     def update_dashboard(self):
         stats = core_stats()
         diskstats = disk_stats() or []
         netstats = net_stats()
+
+        hw = hardware_stats()
 
         cpu_value = stats['cpu']
         ram_value = stats['ram']
@@ -162,9 +175,79 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.ram_curve.setData(self.time_his, self.ram_his)
         self.sent_curve.setData(self.time_his, self.net_sent_his)
         self.recv_curve.setData(self.time_his, self.net_recv_his)
+
+        if hw["temperatures"]:
+            for sensor_id, data in hw["temperatures"].items():
+                curr_temp = data["current"]
+                print(f"Sensor {sensor_id}: {curr_temp}°C")
+
+        if hw["battery"]:
+            batt = hw["battery"]
+            status = "Plugged In" if batt["power_plugged"] else "Discharging"
+            print(f"Battery: {batt["percent"]}% ({status})")
+
+        hw = hardware_stats()
+
+        for sensor_id, bar in self.temp_bars.items():
+            if sensor_id in hw["temperatures"]:
+                curr_temp = hw["temperatures"][sensor_id]["current"]
+                bar.setValue(int(curr_temp))
+                bar.setFormat(f"{curr_temp:.1f}°C")
+        
+        for fan_id, label in self.fan_labels.items():
+            if fan_id in hw["fans"]:
+                rpm = hw["fans"][fan_id]
+                label.setText(f"{rpm} RPM")
+
+        if self.battery_bar and hw["battery"]:
+            batt = hw["battery"]
+            status = "Plugged In" if batt["power_plugged"] else "Discharging"
+            self.battery_bar.setValue(int(batt["percent"]))
+            self.battery_bar.setFormat(f"{batt["percent"]:.0f}% ({status})")
         
 
         print(f"Refreshed stats: {stats}")
+
+    def init_hardware_ui(self):
+        hw = hardware_stats()
+        row = 0
+
+        if hw["temperatures"]:
+            def sort_key(item):
+                name = item[0]
+                digits = ''.join(filter(str.isdigit, name))
+                return (0, int(digits)) if 'Core' in name and digits else (1, name)
+            sorted_temps = sorted(hw["temperatures"].items(), key=sort_key)
+
+            for sensor_id, data in sorted_temps:
+                label = QLabel(f"{sensor_id}:")
+                bar = QProgressBar()
+                bar.setRange(0, 100)
+                bar.setFormat("%v°C")
+                
+                self.gridLayout_Temps.addWidget(label, row, 0)
+                self.gridLayout_Temps.addWidget(bar, row, 1)
+                self.temp_bars[sensor_id] = bar
+                row += 1
+
+            if hw["fans"]:
+                for fan_id in hw["fans"]:
+                    label_title = QLabel(f"{fan_id}:")
+                    label_val = QLabel("0 RPM")
+
+                    self.gridLayout_Temps.addWidget(label_title, row, 0)
+                    self.gridLayout_Temps.addWidget(label_val, row, 1)
+                    self.fan_labels[fan_id] = label_val
+                    row += 1
+
+        if hw["battery"]:
+            self.battery_label = QLabel("Battery:")
+            self.battery_bar = QProgressBar()
+            self.battery_bar.setRange(0, 100)
+
+            self.gridLayout_Temps.addWidget(self.battery_label, row, 0)
+            self.gridLayout_Temps.addWidget(self.battery_bar, row, 1)
+            row += 1
 
     def refresh_proc_list(self):
         self.listWidget.clear()

@@ -83,5 +83,70 @@ def running_procs():
     
     return sorted(proc_list)
 
+def hardware_stats():
+    temps = {}
+    try:
+        raw_temps = psutil.sensors_temperatures()
+        if raw_temps:
+            core_counter = 0
+
+            for sensor_name, entries in raw_temps.items():
+
+                if sensor_name in ('acpitz', 'spd5118'):
+                    continue
+
+                #OOMGG I CANT BELIEVE IM DOING THIS AUUUGHGHGHH
+                #its fun tho
+                for entry in entries:
+                    label = entry.label or sensor_name
+                    if 'nvme' in sensor_name:
+                        display_name = f"Storage ({label})"
+                    elif sensor_name == 'coretemp':
+                        if 'Package' in label:
+                            display_name = "Cpu Package Temp"
+                        else:
+                            display_name = f"CPU Core {core_counter}"
+                            core_counter += 1
+                    else:
+                        display_name = f"{sensor_name} ({label})"
+
+                    temps[display_name] = {
+                        "current": entry.current,
+                        "high": entry.high,
+                        "crticial": entry.critical
+                    }
+    except (AttributeError, NotImplementedError):
+        #unsupported os/hardware
+        pass
+
+    fans = {}
+    try:
+        raw_fans = psutil.sensors_fans()
+        if raw_fans:
+            for fan_name, entries in raw_fans.items():
+                for entry in entries:
+                    label = entry.label or fan_name
+                    fans[f"{fan_name} ({label})"] = entry.current
+    except (AttributeError, NotImplementedError):
+        pass
+    
+    battery = None
+    try:
+        raw_batt = psutil.sensors_battery()
+        if raw_batt:
+            battery = {
+                "percent": raw_batt.percent,
+                "secsleft": raw_batt.secsleft,
+                "power_plugged": raw_batt.power_plugged
+            }
+    except (AttributeError, NotImplementedError):
+        pass
+
+    return {
+        "temperatures": temps,
+        "fans": fans,
+        "battery": battery
+    }
+
 if __name__ == "__main__":
     print(core_stats())
