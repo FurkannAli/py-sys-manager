@@ -1,5 +1,3 @@
-from os import stat
-from typing import Container
 from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar
 from sys_main import Ui_MainWindow
@@ -26,8 +24,6 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_Kill.clicked.connect(self.kill_proc)
 
         self.lineEdit_Search.textChanged.connect(self.search_func)
-
-        self.sensor_labels = {}
 
         #individual core progress bar stuff
         self.core_prog_bars = []
@@ -184,26 +180,32 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         if hw["battery"]:
             batt = hw["battery"]
             status = "Plugged In" if batt["power_plugged"] else "Discharging"
-            print(f"Battery: {batt["percent"]}% ({status})")
+            print(f"Battery: {batt['percent']}% ({status})")
 
-        hw = hardware_stats()
 
         for sensor_id, bar in self.temp_bars.items():
             if sensor_id in hw["temperatures"]:
                 curr_temp = hw["temperatures"][sensor_id]["current"]
                 bar.setValue(int(curr_temp))
                 bar.setFormat(f"{curr_temp:.1f}°C")
+                bar.setStyleSheet(get_temp_stylesheet(curr_temp))
         
         for fan_id, label in self.fan_labels.items():
             if fan_id in hw["fans"]:
                 rpm = hw["fans"][fan_id]
                 label.setText(f"{rpm} RPM")
+                label.setStyleSheet(get_fan_stylesheet(rpm))
 
         if self.battery_bar and hw["battery"]:
             batt = hw["battery"]
             status = "Plugged In" if batt["power_plugged"] else "Discharging"
             self.battery_bar.setValue(int(batt["percent"]))
-            self.battery_bar.setFormat(f"{batt["percent"]:.0f}% ({status})")
+            self.battery_bar.setFormat(f"{batt['percent']:.0f}% ({status})")
+            
+            if batt["power_plugged"]:
+                self.battery_bar.setStyleSheet(get_battery_stylesheet(100))
+            else:
+                self.battery_bar.setStyleSheet(get_battery_stylesheet(batt["percent"]))
         
 
         print(f"Refreshed stats: {stats}")
@@ -293,6 +295,63 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 item.setHidden(False)
             else:
                 item.setHidden(True)
+
+def get_temp_stylesheet(temp_val: float) -> str:
+    if temp_val < 60:
+        color = "#4CAF50"
+    elif temp_val < 75:
+        color = "#FF9800"
+    else:
+        color = "#F44336"
+    
+    #this thing overrides the default theme thing so i had to re-set the font size and stuff
+    return f"""
+        QProgressBar {{
+            border: 1px solid #444;
+            border-radius: 3px;
+            text-align: center;
+            background-color: #222;
+            color: white;
+            font-size: 14pt;
+        }}
+        QProgressBar::chunk {{
+            background-color: {color};
+        }}
+    """
+
+def get_battery_stylesheet(percent: float) -> str:
+    if percent <= 20:
+        color = "#F44336"
+    elif percent <= 50:
+        color = "#FF9800"
+    else:
+        color = "#4CAF50"
+
+    return f"""
+        QProgressBar {{
+            border: 1px solid #444;
+            border-radius: 3px;
+            text-align: center;
+            background-color: #222;
+            color: white;
+            font-size: 14pt;
+        }}
+        QProgressBar::chunk {{
+            background-color: {color};
+        }}
+    """
+
+def get_fan_stylesheet(rpm: int) -> str:
+    if rpm == 0:
+        color = "#888888"
+    elif rpm < 1800:
+        color = "#4CAF50"
+    elif rpm < 3000:
+        color = "#FF9800"
+    else:
+        color = "#F44336"
+
+    return f"font-size: 14pt; color: {color};"
 
 def format_bytes(byte_value):
     #mb = byte_value / (1024 * 1024)
