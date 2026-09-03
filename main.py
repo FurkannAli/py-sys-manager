@@ -346,6 +346,8 @@ def get_fan_stylesheet(rpm: int) -> str:
         color = "#888888"
     elif rpm < 1800:
         color = "#4CAF50"
+    elif rpm < 2500:
+        color = "#FFEB3B"
     elif rpm < 3000:
         color = "#FF9800"
     else:

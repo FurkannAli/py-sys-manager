@@ -1,4 +1,3 @@
-from socket import recv_fds
 import psutil
 import time
 
@@ -88,15 +87,20 @@ def hardware_stats():
     try:
         raw_temps = psutil.sensors_temperatures()
         if raw_temps:
-            core_counter = 0
-
             for sensor_name, entries in raw_temps.items():
 
                 if sensor_name in ('acpitz', 'spd5118'):
                     continue
 
-                #OOMGG I CANT BELIEVE IM DOING THIS AUUUGHGHGHH
-                #its fun tho
+                if sensor_name == 'coretemp':
+                    def get_hw_core_num(e):
+                        digits = ''.join(filter(str.isdigit, e.label or ''))
+                        return int(digits) if digits else 999
+                    entries = sorted(entries, key=get_hw_core_num)
+                
+                core_counter = 0
+                
+                #idkkk
                 for entry in entries:
                     label = entry.label or sensor_name
                     if 'nvme' in sensor_name:
@@ -105,7 +109,7 @@ def hardware_stats():
                         if 'Package' in label:
                             display_name = "Cpu Package Temp"
                         else:
-                            display_name = f"CPU Core {core_counter}"
+                            display_name = f"{core_counter:02d} - HW {label}"
                             core_counter += 1
                     else:
                         display_name = f"{sensor_name} ({label})"
@@ -113,7 +117,7 @@ def hardware_stats():
                     temps[display_name] = {
                         "current": entry.current,
                         "high": entry.high,
-                        "crticial": entry.critical
+                        "critical": entry.critical
                     }
     except (AttributeError, NotImplementedError):
         #unsupported os/hardware
