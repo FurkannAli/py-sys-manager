@@ -18,8 +18,8 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
 from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
     QMenuBar, QProgressBar, QPushButton, QSizePolicy,
-    QSpinBox, QStatusBar, QTabWidget, QVBoxLayout,
-    QWidget)
+    QSpinBox, QSplitter, QStatusBar, QTabWidget,
+    QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
@@ -169,6 +169,32 @@ class Ui_MainWindow(object):
         self.verticalLayout_ChartThing.setObjectName(u"verticalLayout_ChartThing")
         self.verticalLayout_ChartThing.setContentsMargins(0, 0, 0, 0)
         self.tabWidget.addTab(self.tab_3, "")
+        self.tab_6 = QWidget()
+        self.tab_6.setObjectName(u"tab_6")
+        self.pushButton_Export = QPushButton(self.tab_6)
+        self.pushButton_Export.setObjectName(u"pushButton_Export")
+        self.pushButton_Export.setGeometry(QRect(1, 669, 461, 41))
+        self.splitter = QSplitter(self.tab_6)
+        self.splitter.setObjectName(u"splitter")
+        self.splitter.setGeometry(QRect(0, 1, 461, 631))
+        self.splitter.setOrientation(Qt.Orientation.Vertical)
+        self.label_OS = QLabel(self.splitter)
+        self.label_OS.setObjectName(u"label_OS")
+        self.label_OS.setWordWrap(True)
+        self.splitter.addWidget(self.label_OS)
+        self.label_Kernel = QLabel(self.splitter)
+        self.label_Kernel.setObjectName(u"label_Kernel")
+        self.label_Kernel.setWordWrap(True)
+        self.splitter.addWidget(self.label_Kernel)
+        self.label_CPUModel = QLabel(self.splitter)
+        self.label_CPUModel.setObjectName(u"label_CPUModel")
+        self.label_CPUModel.setWordWrap(True)
+        self.splitter.addWidget(self.label_CPUModel)
+        self.label_Uptime = QLabel(self.splitter)
+        self.label_Uptime.setObjectName(u"label_Uptime")
+        self.label_Uptime.setWordWrap(True)
+        self.splitter.addWidget(self.label_Uptime)
+        self.tabWidget.addTab(self.tab_6, "")
         self.tab_2 = QWidget()
         self.tab_2.setObjectName(u"tab_2")
         self.spinBox_Interval = QSpinBox(self.tab_2)
@@ -197,7 +223,7 @@ class Ui_MainWindow(object):
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(2)
+        self.tabWidget.setCurrentIndex(5)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -218,6 +244,12 @@ class Ui_MainWindow(object):
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_5), QCoreApplication.translate("MainWindow", u"Temps", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_4), QCoreApplication.translate("MainWindow", u"Disks, Net", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_3), QCoreApplication.translate("MainWindow", u"Graphs", None))
+        self.pushButton_Export.setText(QCoreApplication.translate("MainWindow", u"Export Data", None))
+        self.label_OS.setText(QCoreApplication.translate("MainWindow", u"os", None))
+        self.label_Kernel.setText(QCoreApplication.translate("MainWindow", u"kernel", None))
+        self.label_CPUModel.setText(QCoreApplication.translate("MainWindow", u"cpumodel", None))
+        self.label_Uptime.setText(QCoreApplication.translate("MainWindow", u"uptime", None))
+        self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_6), QCoreApplication.translate("MainWindow", u"Overview", None))
         self.pushButton_SaveSettings.setText(QCoreApplication.translate("MainWindow", u"Save Settings", None))
         self.label.setText(QCoreApplication.translate("MainWindow", u"Interval Time:", None))
         self.tabWidget.setTabText(self.tabWidget.indexOf(self.tab_2), QCoreApplication.translate("MainWindow", u"Settings", None))

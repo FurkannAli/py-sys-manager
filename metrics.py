@@ -1,5 +1,5 @@
-import psutil
-import time
+import psutil, time
+import platform, json, csv
 
 _last_net_time = None
 _last_net_bytes = None
@@ -43,7 +43,7 @@ def disk_stats():
             })
         except (PermissionError, FileNotFoundError):
             continue
-        return disks
+    return disks
 
 def net_stats():
     global _last_net_time, _last_net_bytes
@@ -99,7 +99,7 @@ def hardware_stats():
                     entries = sorted(entries, key=get_hw_core_num)
                 
                 core_counter = 0
-                
+
                 #idkkk
                 for entry in entries:
                     label = entry.label or sensor_name
@@ -151,6 +151,72 @@ def hardware_stats():
         "fans": fans,
         "battery": battery
     }
+
+def system_overview():
+    boot_time = psutil.boot_time()
+    uptime_secs = int(time.time() - boot_time)
+
+    hours, remainder = divmod(uptime_secs, 3600)
+    minutes, seconds = divmod(remainder, 60)
+    uptime_str = f"{hours}h {minutes}m {seconds}s"
+
+    os_info = f"{platform.system()} {platform.release()}"
+    try:
+        with open("/etc/os-release", "r") as f:
+            for line in f:
+                if line.startswith("PRETTY_NAME="):
+                    os_info = line.split("=")[1].strip().strip('"')
+                    break
+    except Exception:
+        pass
+
+    cpu_model = platform.processor()
+    try:
+        with open("/proc/cpuinfo", "r") as f:
+            for line in f:
+                if "model name" in line:
+                    cpu_model = line.split(":")[1].strip()
+                    break
+    except Exception:
+        pass
+
+    return{
+        "os": os_info,
+        "kernel": platform.release(),
+        "uptime": uptime_str,
+        "cpu_model": cpu_model or "Unknown CPU"
+    }
+
+def export_metrics_snapshot(filepath: str, export_format: str = "json"):
+    c_stats = core_stats()
+    hw_stats = hardware_stats()
+    procs = running_procs()
+
+    snapshot_data = {
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S"),
+        "system": system_overview(),
+        "core_stats": c_stats,
+        "hardware_stats": hw_stats,
+        "running_processes": procs
+    }
+
+    if export_format.lower() == "json":
+        with open(filepath, "w") as f:
+            json.dump(snapshot_data, f, indent=4)
+    elif export_format.lower() == "csv":
+        with open(filepath, "w", newline="") as f:
+            writer = csv.writer(f)
+            writer.writerow(["Category", "Metric", "Value"])
+            writer.writerow(["System", "OS", snapshot_data["system"]["os"]])
+            writer.writerow(["System", "Uptime", snapshot_data["system"]["uptime"]])
+            writer.writerow(["System", "CPU Model", snapshot_data["system"]["cpu_model"]])
+            writer.writerow(["Core", "CPU Usage (%)", c_stats["cpu"]])
+            writer.writerow(["Core", "RAM Usage (%)", c_stats["ram"]])
+            writer.writerow(["Core", "Swap Usage (%)", c_stats["swap"]])
+            for sensor, val in hw_stats["temperatures"].items():
+                writer.writerow(["Temperature", sensor, f"{val['current']}°C"])
+            for proc in procs:
+                writer.writerow(["Process", "Running", proc])
 
 if __name__ == "__main__":
     print(core_stats())

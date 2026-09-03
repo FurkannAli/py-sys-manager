@@ -2,7 +2,7 @@ from PySide6.QtCore import QTimer
 from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar
 from sys_main import Ui_MainWindow
 import sys, psutil, time
-from metrics import core_stats, disk_stats, net_stats, running_procs, hardware_stats
+from metrics import core_stats, disk_stats, net_stats, running_procs, hardware_stats, system_overview, export_metrics_snapshot
 import pyqtgraph as pg
 
 class MainWindow(QMainWindow, Ui_MainWindow):
@@ -24,6 +24,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.pushButton_Kill.clicked.connect(self.kill_proc)
 
         self.lineEdit_Search.textChanged.connect(self.search_func)
+
+        self.pushButton_Export.clicked.connect(self.export_report)
 
         #individual core progress bar stuff
         self.core_prog_bars = []
@@ -105,6 +107,8 @@ class MainWindow(QMainWindow, Ui_MainWindow):
         self.battery_label = None
 
         self.init_hardware_ui()
+
+        self.init_overview_ui()
 
 
 
@@ -206,6 +210,9 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 self.battery_bar.setStyleSheet(get_battery_stylesheet(100))
             else:
                 self.battery_bar.setStyleSheet(get_battery_stylesheet(batt["percent"]))
+            
+        info = system_overview()
+        self.label_Uptime.setText(f"Uptime: {info['uptime']}")
         
 
         print(f"Refreshed stats: {stats}")
@@ -295,6 +302,21 @@ class MainWindow(QMainWindow, Ui_MainWindow):
                 item.setHidden(False)
             else:
                 item.setHidden(True)
+
+    def init_overview_ui(self):
+            info = system_overview()
+            self.label_OS.setText(f"OS: {info['os']}")
+            self.label_Kernel.setText(f"Kernel: {info['kernel']}")
+            self.label_CPUModel.setText(f"CPU: {info['cpu_model']}")
+            self.label_Uptime.setText(f"Uptime: {info['uptime']}")
+
+    #that would be cool if there was a file dialog to save the file
+    def export_report(self):
+        filename = f"snapshot_{int(time.time())}.json"
+        export_metrics_snapshot(filename, export_format="json")
+        print(f"Snapshot exported to {filename}")
+
+    
 
 def get_temp_stylesheet(temp_val: float) -> str:
     if temp_val < 60:
