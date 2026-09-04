@@ -17,15 +17,19 @@ from PySide6.QtGui import (QBrush, QColor, QConicalGradient, QCursor,
     QPalette, QPixmap, QRadialGradient, QTransform)
 from PySide6.QtWidgets import (QApplication, QGridLayout, QHBoxLayout, QLabel,
     QLineEdit, QListWidget, QListWidgetItem, QMainWindow,
-    QMenuBar, QProgressBar, QPushButton, QSizePolicy,
-    QSpinBox, QSplitter, QStatusBar, QTabWidget,
-    QVBoxLayout, QWidget)
+    QProgressBar, QPushButton, QSizePolicy, QSpinBox,
+    QSplitter, QTabWidget, QVBoxLayout, QWidget)
 
 class Ui_MainWindow(object):
     def setupUi(self, MainWindow):
         if not MainWindow.objectName():
             MainWindow.setObjectName(u"MainWindow")
-        MainWindow.resize(482, 846)
+        MainWindow.resize(516, 734)
+        sizePolicy = QSizePolicy(QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Fixed)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(MainWindow.sizePolicy().hasHeightForWidth())
+        MainWindow.setSizePolicy(sizePolicy)
         font = QFont()
         font.setPointSize(18)
         MainWindow.setFont(font)
@@ -35,12 +39,16 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.setObjectName(u"horizontalLayout_2")
         self.tabWidget = QTabWidget(self.centralwidget)
         self.tabWidget.setObjectName(u"tabWidget")
-        sizePolicy = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
-        sizePolicy.setHorizontalStretch(0)
-        sizePolicy.setVerticalStretch(0)
-        sizePolicy.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
-        self.tabWidget.setSizePolicy(sizePolicy)
-        self.tabWidget.setTabShape(QTabWidget.TabShape.Triangular)
+        sizePolicy1 = QSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
+        sizePolicy1.setHorizontalStretch(0)
+        sizePolicy1.setVerticalStretch(0)
+        sizePolicy1.setHeightForWidth(self.tabWidget.sizePolicy().hasHeightForWidth())
+        self.tabWidget.setSizePolicy(sizePolicy1)
+        self.tabWidget.setTabPosition(QTabWidget.TabPosition.West)
+        self.tabWidget.setTabShape(QTabWidget.TabShape.Rounded)
+        self.tabWidget.setIconSize(QSize(16, 16))
+        self.tabWidget.setElideMode(Qt.TextElideMode.ElideNone)
+        self.tabWidget.setMovable(False)
         self.tabWidget.setTabBarAutoHide(False)
         self.tab_1 = QWidget()
         self.tab_1.setObjectName(u"tab_1")
@@ -50,20 +58,20 @@ class Ui_MainWindow(object):
         self.horizontalLayout = QHBoxLayout(self.layoutWidget)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.horizontalLayout.setContentsMargins(0, 0, 0, 0)
-        self.pushButton_Refresh = QPushButton(self.layoutWidget)
-        self.pushButton_Refresh.setObjectName(u"pushButton_Refresh")
+        self.pushButton_3 = QPushButton(self.layoutWidget)
+        self.pushButton_3.setObjectName(u"pushButton_3")
 
-        self.horizontalLayout.addWidget(self.pushButton_Refresh)
+        self.horizontalLayout.addWidget(self.pushButton_3)
 
         self.pushButton_Kill = QPushButton(self.layoutWidget)
         self.pushButton_Kill.setObjectName(u"pushButton_Kill")
 
         self.horizontalLayout.addWidget(self.pushButton_Kill)
 
-        self.pushButton_3 = QPushButton(self.layoutWidget)
-        self.pushButton_3.setObjectName(u"pushButton_3")
+        self.pushButton_Refresh = QPushButton(self.layoutWidget)
+        self.pushButton_Refresh.setObjectName(u"pushButton_Refresh")
 
-        self.horizontalLayout.addWidget(self.pushButton_3)
+        self.horizontalLayout.addWidget(self.pushButton_Refresh)
 
         self.layoutWidget1 = QWidget(self.tab_1)
         self.layoutWidget1.setObjectName(u"layoutWidget1")
@@ -173,10 +181,10 @@ class Ui_MainWindow(object):
         self.tab_6.setObjectName(u"tab_6")
         self.pushButton_Export = QPushButton(self.tab_6)
         self.pushButton_Export.setObjectName(u"pushButton_Export")
-        self.pushButton_Export.setGeometry(QRect(1, 669, 461, 41))
+        self.pushButton_Export.setGeometry(QRect(1, 669, 451, 41))
         self.splitter = QSplitter(self.tab_6)
         self.splitter.setObjectName(u"splitter")
-        self.splitter.setGeometry(QRect(0, 1, 461, 631))
+        self.splitter.setGeometry(QRect(10, 1, 441, 561))
         self.splitter.setOrientation(Qt.Orientation.Vertical)
         self.label_OS = QLabel(self.splitter)
         self.label_OS.setObjectName(u"label_OS")
@@ -204,7 +212,7 @@ class Ui_MainWindow(object):
         self.spinBox_Interval.setMaximum(60)
         self.pushButton_SaveSettings = QPushButton(self.tab_2)
         self.pushButton_SaveSettings.setObjectName(u"pushButton_SaveSettings")
-        self.pushButton_SaveSettings.setGeometry(QRect(10, 590, 441, 51))
+        self.pushButton_SaveSettings.setGeometry(QRect(1, 669, 451, 41))
         self.label = QLabel(self.tab_2)
         self.label.setObjectName(u"label")
         self.label.setGeometry(QRect(10, 10, 181, 51))
@@ -213,17 +221,10 @@ class Ui_MainWindow(object):
         self.horizontalLayout_2.addWidget(self.tabWidget)
 
         MainWindow.setCentralWidget(self.centralwidget)
-        self.menubar = QMenuBar(MainWindow)
-        self.menubar.setObjectName(u"menubar")
-        self.menubar.setGeometry(QRect(0, 0, 482, 33))
-        MainWindow.setMenuBar(self.menubar)
-        self.statusbar = QStatusBar(MainWindow)
-        self.statusbar.setObjectName(u"statusbar")
-        MainWindow.setStatusBar(self.statusbar)
 
         self.retranslateUi(MainWindow)
 
-        self.tabWidget.setCurrentIndex(5)
+        self.tabWidget.setCurrentIndex(0)
 
 
         QMetaObject.connectSlotsByName(MainWindow)
@@ -231,9 +232,9 @@ class Ui_MainWindow(object):
 
     def retranslateUi(self, MainWindow):
         MainWindow.setWindowTitle(QCoreApplication.translate("MainWindow", u"MainWindow", None))
-        self.pushButton_Refresh.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
-        self.pushButton_Kill.setText(QCoreApplication.translate("MainWindow", u"Kill Process", None))
         self.pushButton_3.setText(QCoreApplication.translate("MainWindow", u"Clear Caches", None))
+        self.pushButton_Kill.setText(QCoreApplication.translate("MainWindow", u"Kill Process", None))
+        self.pushButton_Refresh.setText(QCoreApplication.translate("MainWindow", u"Refresh", None))
         self.label_cpu.setText(QCoreApplication.translate("MainWindow", u"Cpu Percentage", None))
         self.label_mem.setText(QCoreApplication.translate("MainWindow", u"Memory Percentage", None))
         self.lineEdit_Search.setText("")
