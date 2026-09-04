@@ -1,5 +1,5 @@
 from PySide6.QtCore import QTimer
-from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar
+from PySide6.QtWidgets import QApplication, QLabel, QMainWindow, QProgressBar, QFileDialog, QMessageBox
 from sys_main import Ui_MainWindow
 import sys, psutil, time
 from metrics import core_stats, disk_stats, net_stats, running_procs, hardware_stats, system_overview, export_metrics_snapshot
@@ -310,11 +310,20 @@ class MainWindow(QMainWindow, Ui_MainWindow):
             self.label_CPUModel.setText(f"CPU: {info['cpu_model']}")
             self.label_Uptime.setText(f"Uptime: {info['uptime']}")
 
-    #that would be cool if there was a file dialog to save the file
     def export_report(self):
-        filename = f"snapshot_{int(time.time())}.json"
-        export_metrics_snapshot(filename, export_format="json")
-        print(f"Snapshot exported to {filename}")
+        filename, selected_filter = QFileDialog.getSaveFileName(
+            self,
+            "Save Metrics Snapshot",
+            f"snapshot_{int(time.time())}.json",
+            "JSON Files (*.json);;CSV Files (*.csv)"
+        )
+        if filename:
+            fmt = "csv" if selected_filter.startswith("CSV") else "json"
+            try:
+                export_metrics_snapshot(filename, export_format=fmt)
+                QMessageBox.information(self, 'Export Success', f"Saved to:\n{filename}")
+            except Exception as e:
+                QMessageBox.critical(self, "Export Failed", f"Could not save file:\n{e}")
 
     
 
